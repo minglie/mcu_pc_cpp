@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wave2</title>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <style>
+      
+    </style>
+</head>
+<body>
+	<input id='fileId' type="file" value="wave.txt" onchange="upload()"/>
+    <div id="text"></div>
+    <button id="cleanBtn" onclick="GUI_ClearSCR()"/>清空</button>
+    <button id="updateBtn" onclick="upload()"/>更新</button>
+    <button id="leftBtn" onclick="left()"/>左移</button>
+    <button id="rightBtn" onclick="right()"/>右移</button>
+    <button id="lastPageBtn" onclick="lastPage()"/>上一页</button>
+    <button id="nextPageBtn" onclick="nextPage()"/>下一页</button>    
+    <button id="waveBtn" onclick="drawWave(1)"/>画波形</button>
+    <button id="testbtn" onclick="test()"/>测试按钮</button>
+   
+    <select id="drawTypeId">
+  		<option value ="1">数字信号方波</option>
+  		<option value="2">数字信号冲击信号</option>
+  		<option value="3">模拟信号方波</option>
+  		<option value="3">模拟信号冲击波</option>
+    </select>
+    
+    
+     
+             每页400个数据     
+            总共有：<em id="emLableTotalCount"></em>个数据
+            总共有：<em id="emLableTotalPage"></em>页
+            当前页：<em id="emLableCurrentPage"></em>
+            当前最左端：<em id="emLableStart"></em>
+            当前最右端：<em id="emLableEnd"></em>
+    
+    <br/> <br/> <br/>
+    
+    <canvas id="canvas" width="4000" height="500"></canvas>
+    
+</body>
+</html>
+
+
+
+<script>
+	pageSize=400;
+	var waveDat;
+	var yushu;
+	var totalPage;
+	var pageIndex=1;
+	var canvas = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");
+</script>
+
+
+<script>
+	function test(){
+		
+		alert(drawTypeId.selectedIndex);
+	}
+	
+	function left(){
+		//GUI_HLine(0, 0, 50, "red");			
+		GUI_RLine(0, 30, 50, "red");	
+		//GUI_ClearSCR();
+	}
+	
+	function right(){
+		GUI_RLine(400, 30, 50, "red");	
+		//GUI_ClearSCR();
+	}
+	
+	function lastPage(){
+		pageIndex=pageIndex-1;
+		if(pageIndex<1)pageIndex=1;
+		if(pageIndex>totalPage)pageIndex=totalPage;	
+		drawWave(pageIndex);
+		
+	}
+	
+	function nextPage(){
+		pageIndex=pageIndex+1;
+		if(pageIndex<1)pageIndex=1;
+		if(pageIndex>totalPage)pageIndex=totalPage;	
+		drawWave(pageIndex);
+	}
+	
+
+	
+	function GUI_ClearSCR(){
+		ctx.clearRect(0,0,canvas.width,canvas.height);//清空
+		drawMap();
+		
+	}
+	
+	function init(){
+
+		yushu=waveDat.length%pageSize;
+		if(yushu>0){
+			totalPage=parseInt(waveDat.length/pageSize)+1;
+		}else{
+			totalPage=waveDat.length/pageSize;
+		}	
+		
+		emLableTotalCount.innerHTML=waveDat.length;	
+		emLableTotalPage.innerHTML=totalPage;
+			
+	}
+	
+	
+	
+	
+	
+	
+	function draw_digital_square(start,end){		
+		for(var i=start;i<end;i++){		
+			if(waveDat[i] !=waveDat[i+1]) GUI_RLine(i+1, 0, 5, "red");		
+			GUI_HLine(i, 5*parseInt(waveDat[i]),i+1, "red");										
+		}					
+	}
+	
+	
+	function draw_digital_attack(start,end){		
+		for(var i=start;i<end;i++){				
+			if(waveDat[i]>0){				
+				GUI_RLine(i, 0, 5, "blue");		
+			}									
+		}					
+	}
+	
+	
+	function draw_analog_square(start,end){		
+		for(var i=start;i<end;i++){		
+			if(waveDat[i] !=waveDat[i+1]) GUI_RLine(i+1, 0, waveDat[i+1], "red");		
+			GUI_HLine(i, 5*parseInt(waveDat[i]),i+1, "red");										
+		}					
+	}
+	
+	function draw_analog_attack(start,end){	
+		
+		for(var i=start;i<end;i++){	
+			GUI_RLine(i, 0,parseInt(waveDat[i]), "blue");				
+		}
+		
+					
+	}
+	
+
+	
+	//画第pageIndex页
+	function drawWave(pageIndex){
+				
+		var start;
+		var end;
+		start=(pageIndex-1)*pageSize;	
+		end=(start+pageSize-1)>waveDat.length? waveDat.length:(start+pageSize-1);
+
+		emLableCurrentPage.innerHTML=pageIndex;	
+		emLableStart.innerHTML=start;
+		emLableEnd.innerHTML=end;
+		
+		//alert(drawTypeId.selectedIndex);
+		GUI_ClearSCR();
+		switch(drawTypeId.selectedIndex ){
+			case 0:draw_digital_square(start,end);break;
+			case 1:draw_digital_attack(start,end);break;
+			case 2:draw_analog_square(start,end);break;
+			case 3:draw_analog_attack(start,end);break;
+		}
+	
+	}
+	
+
+	
+</script>
+
+
+
+
+
+
+<script>	
+	
+
+	function upload() {
+    //支持chrome IE10   
+    input=fileId;
+    if (window.FileReader) {
+        var file = input.files[0];
+       
+        filename = file.name.split(".")[0];
+        var reader = new FileReader();
+        reader.onload = function() {       	
+            waveDat=this.result;           
+          
+            if(drawTypeId.selectedIndex<2) waveDat=waveDat.split("");   
+            else {
+            	
+            	waveDat=waveDat.split(" ");
+            	
+            }
+          
+            console.log(waveDat);
+          
+          init();
+        }
+        reader.readAsText(file,"gb2312");
+        
+    } 
+}
+</script>
+
+
+
+
+
+<script>
+	
+	
+	function f1(){		
+		ctx.beginPath();
+		ctx.arc(0,50-0,50,0,2*Math.PI);
+		ctx.stroke();	
+	}
+	
+	function f2(){
+				
+		ctx.beginPath();
+		ctx.moveTo(0,0);
+		ctx.lineTo(100,100);		
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "red";
+		ctx.stroke();
+	}
+	
+	function  GUI_HLine(x0, y0, x1, color){
+		
+		y0=y0+1;	
+		y0=50-y0;
+		ctx.beginPath();
+		ctx.moveTo(10*x0,10*y0);
+		ctx.lineTo(10*x1,10*y0);		
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = color;
+		ctx.stroke();	
+	}
+	
+	function GUI_RLine(x0, y0, y1, color){
+		y0=y0+1;
+		y1=y1+1;
+		
+		y0=50-y0;
+		y1=50-y1;
+		ctx.beginPath();
+		ctx.moveTo(10*x0,10*y0);
+		ctx.lineTo(10*x0,10*y1);		
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = color;
+		ctx.stroke();	
+	}
+	
+	
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+		function drawMap(){		
+	
+		 //描绘背景  
+	        var gradient=ctx.createLinearGradient(0,0,0,300);//createLinearGradient() 方法创建线性的渐变对象。  
+	        gradient.addColorStop(0,"#e0e0e0");  
+	        gradient.addColorStop(1,"#ffffff");  
+	        ctx.fillStyle=gradient;  
+	        ctx.fillRect=(0,0,canvas.width,canvas.height);  
+	        //描绘边框  
+	        var grid_cols=400;  
+	        var grid_rows=50;  
+	        var cell_height=canvas.height/grid_rows;  
+	        var cell_width=canvas.width/grid_cols;  
+	        ctx.lineWidth=1;  
+	        ctx.strokeStyle="#F3F3FA";  
+	        //结束边框描绘  
+	        ctx.beginPath();  
+	        //准备画横线  
+	        for(var col=0;col<=grid_cols;col++)  
+	            {  
+	                var x=col*cell_width;  
+	                ctx.moveTo(x,0);  
+	                ctx.lineTo(x,canvas.height);  
+	            }  
+	            //准备画竖线  
+	            for(var row=0;row<=grid_rows;row++)  
+	                {  
+	                    var y=row*cell_height;  
+	                    ctx.moveTo(0,y);  
+	                    ctx.lineTo(canvas.width,y);  
+	                }  
+	                //完成描绘  
+	              ctx.stroke();  			
+		}
+      
+
+
+
+
+    //键盘事件
+    document.onkeydown = function (e) {
+        var ev = e||window.event;
+        switch(ev.keyCode){
+            case 37:{
+                
+                break;
+            }
+            case 38:{
+                
+                break;
+            }
+            case 39:{
+                
+                break;
+            }
+            case 40:{
+               
+                break;
+            }   
+        }
+        ev.preventDefault();
+    }
+
+
+
+  drawMap();
+</script>
+
+
